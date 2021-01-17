@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -6,7 +7,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using OnePipe.API.Filter;
+using OnePipe.Core.DatabaseConnection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,8 +30,32 @@ namespace OnePipe.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            // requires using Microsoft.Extensions.Options
+            services.Configure<OnePipeDatabaseSetting>(
+                Configuration.GetSection(nameof(OnePipeDatabaseSetting)));
+
+            services.AddSingleton<IOnePipeDatabaseSetting>(sp =>
+                sp.GetRequiredService<IOptions<OnePipeDatabaseSetting>>().Value);
 
             services.AddControllers();
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy("UserShouldAccessRecord", opt =>
+                {
+                    opt.RequireAuthenticatedUser();
+                    opt.AuthenticationSchemes.Add(
+                            JwtBearerDefaults.AuthenticationScheme);
+                    opt.Requirements.Add(new UserShouldAccessRecord());
+                });
+
+                config.AddPolicy("UserShouldUpdateRecord", opt =>
+                {
+                    opt.RequireAuthenticatedUser();
+                    opt.AuthenticationSchemes.Add(
+                            JwtBearerDefaults.AuthenticationScheme);
+                    opt.Requirements.Add(new UserShouldAccessRecord());
+                });
+            });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "OnePipe.API", Version = "v1" });
