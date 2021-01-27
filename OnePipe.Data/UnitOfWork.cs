@@ -4,6 +4,7 @@ using OnePipe.Core.Repositories;
 using OpePipe.Data.Implementation;
 using Scrutor.AspNetCore;
 using System;
+using System.Threading.Tasks;
 
 namespace OpePipe.Data
 {

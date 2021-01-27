@@ -45,10 +45,23 @@ namespace OnePipe.Service.Services
                 var result = await _userManager.CreateAsync(user, password);
                 if (result.Succeeded)
                 {
-                    //var 
+                    //add role and permission
+
+                    if (!await _roleManager.RoleExistsAsync(user.EmployeeType.ToString()))
+                    {
+                        await _userManager.AddToRoleAsync(user, user.EmployeeManager.ToString());
+                    }
+                    else
+                    {
+                        var role = new UserRole;
+                        role.Name = user.EmployeeManager.ToString();
+                        await _roleManager.CreateAsync(role);
+                        await _userManager.AddToRoleAsync(user, user.EmployeeManager.ToString());
+                    }
                 }
 
-                //add role and permission
+                response.status = result.Succeeded ? "success" : "failed";
+                return response;
             }
             {
                 response.status = "failed";
@@ -201,6 +214,27 @@ namespace OnePipe.Service.Services
             throw new NotImplementedException();
         }
 
+        public async Task<bool> AddEmployeeToManager(string userId, string managerId)
+        {
+            bool result = false;
+            var manager = _userManager.Users.Where(x => x.Id == managerId).FirstOrDefault();
+
+            if(manager != null)
+            {
+                //assume staff is not null also
+                //assume the user not attached to the user before
+                var emp = new EmployeeManager
+                {
+                    EmployeeId = userId,
+                    ManagerId = managerId
+                };
+
+                manager.EmployeeManager.Add(emp);
+                result = true;
+            }
+
+            return result;
+        }
     }
 }
                                          

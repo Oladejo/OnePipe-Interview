@@ -14,6 +14,6 @@ namespace OnePipe.Core.Services
         Task<List<Users>> GetUsers();
         Task<Users> GetUsers(string id);
         Task<ResponseMessageHandler> UpdateUser(string userid, Users user);
-
+        Task<bool> AddEmployeeToManager(string userId, string managerId);
     }
 }

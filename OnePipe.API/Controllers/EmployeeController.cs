@@ -29,7 +29,6 @@ namespace OnePipe.API.Controllers
             return result;
         }
 
-
         [Authorize("UserShouldUpdateRecord")]
         [HttpPut]
         [Route("UpdateEmployee/{userId}")]
@@ -47,5 +46,6 @@ namespace OnePipe.API.Controllers
             var result = await _userManagerService.GetUsers(userId);
             return result;
         }
+
     }
 }
