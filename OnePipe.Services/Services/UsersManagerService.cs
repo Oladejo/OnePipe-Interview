@@ -53,7 +53,7 @@ namespace OnePipe.Service.Services
                     }
                     else
                     {
-                        var role = new UserRole;
+                        var role = new UserRole();
                         role.Name = user.EmployeeManager.ToString();
                         await _roleManager.CreateAsync(role);
                         await _userManager.AddToRoleAsync(user, user.EmployeeManager.ToString());
