@@ -30,18 +30,18 @@ namespace OnePipe.API.Controllers
             return result;
         }
 
-        //[Authorize("UserShouldUpdateRecord")]
         [HttpPut]
         [Route("UpdateEmployee/{userId}")]
+        [Authorize("AccessManagerEmployee", AuthenticationSchemes = "Bearer")]
         public async Task<ResponseMessageHandler> UpdateEmployees(string userId, Users user)
         {
             var result = await _userManagerService.UpdateUser(userId, user);
             return result;
         }
 
-        //[Authorize("UserShouldAccessRecord")]
         [HttpGet]
         [Route("GetEmployee/{userId}")]
+        [Authorize("AccessManagerEmployee", AuthenticationSchemes = "Bearer")]
         public async Task<Users> GetEmployee(string userId)
         {
             var result = await _userManagerService.GetUsers(userId);

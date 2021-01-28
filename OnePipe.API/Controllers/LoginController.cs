@@ -92,8 +92,6 @@ namespace OnePipe.API.Controllers
             return response;
         }
 
-
-
         [HttpGet("get_employee/{email}")]
         public async Task<IActionResult> GetEmployee(string email)
         {
@@ -116,12 +114,11 @@ namespace OnePipe.API.Controllers
         [Authorize("AccessAllEmployee")]
         public async Task<IActionResult> GetEmployeesTask()
         {
-
             var users = new List<Users>();
 
             if (User.IsInRole("HR"))
             {
-               // users = await _userManagerService.GeHRtUsers();
+                users = await _userManagerService.GetHRUsers();
             }
             else
             {

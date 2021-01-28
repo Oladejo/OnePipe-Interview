@@ -234,14 +234,9 @@ namespace OnePipe.API.Services
             return employees;
         }
 
-        private async Task<List<Users>> GetHRUsers(Users user, List<Users> employees)
+        public async Task<List<Users>> GetHRUsers()
         {
-            //work on the predicate to reduce filtering to the database
-            var hrUser = await _unitOfWork.User.GetEmpoyeeForHR();
-
-            //work on Exclude duplicate user adding in the loop
-            employees.AddRange(hrUser);
-            return employees;
+            return _userManager.Users.Where(x => !x.Roles.Contains("HR")).ToList();
         }
 
         public async Task<List<Users>> GetMyUsers(string id)

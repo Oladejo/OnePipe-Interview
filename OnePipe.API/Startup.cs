@@ -81,15 +81,21 @@ namespace OnePipe.API
                         JwtBearerDefaults.AuthenticationScheme);
                     opt.RequireRole(new List<string> { "Manager" });
                 });
+
+                config.AddPolicy("AccessEmployeeManagement", opt =>
+                {
+                    opt.RequireAuthenticatedUser();
+                    opt.AuthenticationSchemes.Add(
+                        JwtBearerDefaults.AuthenticationScheme);
+                    opt.RequireRole(new List<string> { "ADMINISTRATIVE" });
+                });
             });
-           // services.AddScoped<IUsersManagerService, UsersManagerService>();
+
             services.AddMvc();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info { Title = "OnePipe.API", Version = "v1" });
-            });
-
-         
+            });       
 
         }
 
