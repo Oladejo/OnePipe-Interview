@@ -17,7 +17,7 @@ using System.Threading.Tasks;
 
 namespace OnePipe.Service.Services
 {
-    public class UsersManagerService : IUsersManagerService, IScopedLifetime
+    public class UsersManagerService : IUsersManagerService
     {
         private readonly UserManager<Users> _userManager;
         private readonly RoleManager<UserRole> _roleManager;

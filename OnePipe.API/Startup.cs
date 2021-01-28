@@ -2,18 +2,23 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OnePipe.API.Filter;
 using OnePipe.Core.DatabaseConnection;
+using OnePipe.Core.Services;
+using OnePipe.Service.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace OnePipe.API
@@ -37,33 +42,55 @@ namespace OnePipe.API
             services.AddSingleton<IOnePipeDatabaseSetting>(sp =>
                 sp.GetRequiredService<IOptions<OnePipeDatabaseSetting>>().Value);
 
-            services.AddControllers();
-            services.AddAuthorization(config =>
-            {
-                config.AddPolicy("UserShouldAccessRecord", opt =>
-                {
-                    opt.RequireAuthenticatedUser();
-                    opt.AuthenticationSchemes.Add(
-                            JwtBearerDefaults.AuthenticationScheme);
-                    opt.Requirements.Add(new UserShouldAccessRecord());
-                });
+            services.AddMvc();
+            //services.AddAuthorization(config =>
+            //{
+            //    config.AddPolicy("UserShouldAccessRecord", opt =>
+            //    {
+            //        opt.RequireAuthenticatedUser();
+            //        opt.AuthenticationSchemes.Add(
+            //                JwtBearerDefaults.AuthenticationScheme);
+            //        opt.Requirements.Add(new UserShouldAccessRecord());
+            //    });
 
-                config.AddPolicy("UserShouldUpdateRecord", opt =>
+            //    config.AddPolicy("UserShouldUpdateRecord", opt =>
+            //    {
+            //        opt.RequireAuthenticatedUser();
+            //        opt.AuthenticationSchemes.Add(
+            //                JwtBearerDefaults.AuthenticationScheme);
+            //        opt.Requirements.Add(new UserShouldAccessRecord());
+            //    });
+            //});
+            var key = Encoding.ASCII.GetBytes("123456789");
+            services.AddAuthentication(x =>
+            {
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(x =>
+            {
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = true;
+                x.TokenValidationParameters = new TokenValidationParameters
                 {
-                    opt.RequireAuthenticatedUser();
-                    opt.AuthenticationSchemes.Add(
-                            JwtBearerDefaults.AuthenticationScheme);
-                    opt.Requirements.Add(new UserShouldAccessRecord());
-                });
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false
+                };
             });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "OnePipe.API", Version = "v1" });
             });
+
+            services.AddIdentityWithMongoStores("mongodb://localhost:27017/OnePipeDB").
+
+            services.AddSingleton<IUsersManagerService, UsersManagerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -74,14 +101,14 @@ namespace OnePipe.API
 
             //app.UseHttpsRedirection();
 
-            app.UseRouting();
+            app.UseMvc();
 
-            app.UseAuthorization();
+            app.UseAuthentication();
 
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapControllers();
-            });
+            //app.usem(endpoints =>
+            //{
+            //    endpoints.MapControllers();
+            //});
         }
     }
 }

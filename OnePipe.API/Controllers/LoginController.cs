@@ -12,6 +12,11 @@ namespace OnePipe.API.Controllers
     {
         private readonly IUsersManagerService _userManagerService;
 
+        public LoginController(IUsersManagerService usersManagerService)
+        {
+            _userManagerService = usersManagerService;
+        }
+
         [HttpPost]
         public async Task<IActionResult> LoginAsync(UserLogin login)
         {
