@@ -5,8 +5,13 @@ namespace OnePipe.Core.Entities
 {
     public class SalaryHistory : Entity
     {
-        public string EmployeeId { get; set; }
-        public decimal Salary { get; set; }
-        public DateTime Date { get; set; }
+   
+        public string Type { get; set; }
+
+        public DateTime DateEarned { get; set; }
+
+        public decimal Amount { get; set; }
     }
+
+
 }

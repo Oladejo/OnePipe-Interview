@@ -5,8 +5,16 @@ namespace OnePipe.Core.Entities
 {
     public class Permissions : Entity
     {
-        public string Name { get; set; }
+        public int Id { get; set; }
+
         public string Code { get; set; }
+
+        public string Name { get; set; }
         public List<string> EmployeeTypes { get; set; }
+
+        public virtual ICollection<RolePermissions> RolePermissions { get; set; }
     }
+
+
+   
 }

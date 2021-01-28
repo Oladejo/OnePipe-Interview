@@ -1,12 +1,9 @@
 ﻿namespace OnePipe.Core.Enum
 {
-    public enum EnumType
-    {
-    }
 
     public enum EmployeeType
     {
-        Enployee,
+        Employee,
         Manager,
         HR,
         Administrative

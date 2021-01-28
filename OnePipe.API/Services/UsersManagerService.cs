@@ -1,4 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using OnePipe.Core;
@@ -6,16 +13,8 @@ using OnePipe.Core.DTO;
 using OnePipe.Core.Entities;
 using OnePipe.Core.Enum;
 using OnePipe.Core.Services;
-using Scrutor.AspNetCore;
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace OnePipe.Service.Services
+namespace OnePipe.API.Services
 {
     public class UsersManagerService : IUsersManagerService
     {
@@ -41,15 +40,15 @@ namespace OnePipe.Service.Services
 
                 if (!userExist)
                 {
-                    user.Roles = new List<string> { user.EmployeeType.ToString() };
+                    user.Roles = new List<string> { user.UserType };
                     var result = await _userManager.CreateAsync(user, user.PasswordHash);
                     if (result.Succeeded)
                     {
                         //add role and permission
 
-                        if (!await _roleManager.RoleExistsAsync(user.EmployeeType.ToString()))
+                        if (!await _roleManager.RoleExistsAsync(user.UserType.ToString()))
                         {
-                            await _userManager.AddToRoleAsync(user, user.EmployeeType.ToString());
+                            await _userManager.AddToRoleAsync(user, user.UserType.ToString());
                         }
                         else
                         {
@@ -108,20 +107,47 @@ namespace OnePipe.Service.Services
             }
         }
 
-        public async Task<string> Login(string email, string password)
+        public async Task<ResponseMessageHandler> Login(string email, string password)
         {
-            string tokenString = string.Empty;
-            var user = await AuthenticateUsers(email, password);
-
-            if (user != null)
+            var response = new ResponseMessageHandler();
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
             {
-                var roles = await UserRoles(user);
-                var userRoles = roles.Select(r => new Claim(ClaimTypes.Role, r)).ToArray();
-                var userClaims = await GetUserClaimAsync(user);
-                var roleClaims = await GetRoleClaimsAsync(roles).ConfigureAwait(false);
-                tokenString = GenerateJSONWebToken(user, userRoles, userClaims, roleClaims);                
+                return new ResponseMessageHandler {status = "failed"};
             }
-            return tokenString;
+
+            var userClaims = _userManager.GetClaimsAsync(user).Result;
+
+            userClaims.Add(new Claim(JwtRegisteredClaimNames.Sub, user.Email));
+
+            userClaims.Add(new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()));
+
+            user.Roles.ForEach(role =>
+            {
+                userClaims.Add(new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", role));
+            });
+
+            user.Claims.ForEach(c =>
+            {
+                userClaims.Add(new Claim(c.Type, c.Value));
+            });
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("@#bo5lterer2d!4547d7r6"));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+
+            var token = new JwtSecurityToken(
+                issuer: "http://teseter.co",
+                audience: "all",
+                claims: userClaims,
+                expires: DateTime.Now.AddDays(1),
+                signingCredentials: creds);
+
+            string access_token = new JwtSecurityTokenHandler().WriteToken(token);
+            response.data = access_token;
+            response.status = "success";
+            response.UserId = user.Id;
+            return response;
         }
 
         private async Task<Users> AuthenticateUsers(string email, string password)
@@ -194,31 +220,8 @@ namespace OnePipe.Service.Services
         public async Task<List<Users>> GetUsers()
         {
             //Login User
-            var userId = _httpContextAccessor.HttpContext.User.FindFirst("Id").Value;
-            var user = await _unitOfWork.User.GetAsync(userId);
-            var roles = await _userManager.GetRolesAsync(user);
-
-            var employees = new List<Users>();
-
-            foreach(string role in roles)
-            {
-                EmployeeType employeeType;
-                Enum.TryParse(role, out employeeType);
-
-                switch (employeeType)
-                {
-                    case EmployeeType.HR:
-                        employees = await GetHRUsers(user, employees);
-                        break;
-                    case EmployeeType.Manager:
-                        employees = await GetManagerUsers(user, employees);
-                        break;
-                    default:
-                        break;
-                }                    
-            }
-            return employees;
-         }
+            return  _userManager.Users.ToList();
+        }
 
         private async Task<List<Users>> GetManagerUsers(Users user, List<Users> employees)
         {
@@ -239,6 +242,11 @@ namespace OnePipe.Service.Services
             //work on Exclude duplicate user adding in the loop
             employees.AddRange(hrUser);
             return employees;
+        }
+
+        public async Task<List<Users>> GetMyUsers(string id)
+        {
+            return _userManager.Users.Where(c => c.ManagedById == id).ToList();
         }
 
         public Task<ResponseMessageHandler> UpdateUser(string userid, Users user)

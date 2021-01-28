@@ -2,9 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using OnePipe.Core.DTO;
 using OnePipe.Core.Entities;
-using OnePipe.Core.Services;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.WindowsAzure.Storage;
+using IUsersManagerService = OnePipe.API.Services.IUsersManagerService;
 
 namespace OnePipe.API.Controllers
 {
@@ -20,16 +21,16 @@ namespace OnePipe.API.Controllers
             _userManagerService = usersManagerService;
         }
 
-        [Authorize("UserShouldAccessRecord")]
+        [Authorize("AccessAllEmployee", AuthenticationSchemes = "Bearer")]
         [HttpGet]
-        [Route("GetEmployees")]
+        [Route("all")]
         public async Task<IList<Users>> GetEmployees()
         {
             var result = await _userManagerService.GetUsers();
             return result;
         }
 
-        [Authorize("UserShouldUpdateRecord")]
+        //[Authorize("UserShouldUpdateRecord")]
         [HttpPut]
         [Route("UpdateEmployee/{userId}")]
         public async Task<ResponseMessageHandler> UpdateEmployees(string userId, Users user)
@@ -38,7 +39,7 @@ namespace OnePipe.API.Controllers
             return result;
         }
 
-        [Authorize("UserShouldAccessRecord")]
+        //[Authorize("UserShouldAccessRecord")]
         [HttpGet]
         [Route("GetEmployee/{userId}")]
         public async Task<Users> GetEmployee(string userId)

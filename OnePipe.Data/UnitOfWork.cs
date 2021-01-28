@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace OpePipe.Data
 {
-    public class UnitOfWork : IUnitOfWork, IScopedLifetime
+    public class UnitOfWork : IUnitOfWork
     {
         private readonly IOnePipeDatabaseSetting _settings;
         public UnitOfWork(IOnePipeDatabaseSetting settings)
@@ -33,7 +33,7 @@ namespace OpePipe.Data
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            
         }
     }
 }

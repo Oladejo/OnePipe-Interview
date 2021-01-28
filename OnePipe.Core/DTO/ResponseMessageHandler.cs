@@ -10,6 +10,9 @@ namespace OnePipe.Core.DTO
         }
         public string status { get; set; }
 
+
+        public string UserId { get; set; }
+
         public List<string> ErrorMessages { get; set; }
 
         public object data { get; set; }

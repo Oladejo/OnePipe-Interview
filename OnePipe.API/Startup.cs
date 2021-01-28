@@ -1,25 +1,20 @@
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
 using OnePipe.API.Filter;
 using OnePipe.Core.DatabaseConnection;
-using OnePipe.Core.Services;
-using OnePipe.Service.Services;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using OnePipe.Core;
+using OnePipe.Core.Entities;
+using OpePipe.Data;
+using IUsersManagerService = OnePipe.API.Services.IUsersManagerService;
+using UsersManagerService = OnePipe.API.Services.UsersManagerService;
+
 
 namespace OnePipe.API
 {
@@ -39,29 +34,18 @@ namespace OnePipe.API
             services.Configure<OnePipeDatabaseSetting>(
                 Configuration.GetSection(nameof(OnePipeDatabaseSetting)));
 
-            services.AddSingleton<IOnePipeDatabaseSetting>(sp =>
+            services.AddScoped<IOnePipeDatabaseSetting>(sp =>
                 sp.GetRequiredService<IOptions<OnePipeDatabaseSetting>>().Value);
 
-            services.AddMvc();
-            //services.AddAuthorization(config =>
-            //{
-            //    config.AddPolicy("UserShouldAccessRecord", opt =>
-            //    {
-            //        opt.RequireAuthenticatedUser();
-            //        opt.AuthenticationSchemes.Add(
-            //                JwtBearerDefaults.AuthenticationScheme);
-            //        opt.Requirements.Add(new UserShouldAccessRecord());
-            //    });
+           
 
-            //    config.AddPolicy("UserShouldUpdateRecord", opt =>
-            //    {
-            //        opt.RequireAuthenticatedUser();
-            //        opt.AuthenticationSchemes.Add(
-            //                JwtBearerDefaults.AuthenticationScheme);
-            //        opt.Requirements.Add(new UserShouldAccessRecord());
-            //    });
-            //});
-            var key = Encoding.ASCII.GetBytes("123456789");
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+            
+            
+            var key = Encoding.ASCII.GetBytes("@#bo5lterer2d!4547d7r6");
+        
+            services.AddIdentityWithMongoStoresUsingCustomTypes
+                <Users, UserRole>("mongodb://localhost:27017/OnePipeHrDB").AddDefaultTokenProviders();
             services.AddAuthentication(x =>
             {
                 x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -79,36 +63,49 @@ namespace OnePipe.API
                     ValidateAudience = false
                 };
             });
+            services.AddAuthorization(config =>
+            {
+                config.AddPolicy("AccessAllEmployee", opt =>
+                {
+                    opt.RequireAuthenticatedUser();
+                    opt.AuthenticationSchemes.Add(
+                        JwtBearerDefaults.AuthenticationScheme);
+                    opt.RequireRole(new List<string> { "ADMINISTRATIVE" , "HR"});
+
+                });
+
+                config.AddPolicy("AccessManagerEmployee", opt =>
+                {
+                    opt.RequireAuthenticatedUser();
+                    opt.AuthenticationSchemes.Add(
+                        JwtBearerDefaults.AuthenticationScheme);
+                    opt.RequireRole(new List<string> { "Manager" });
+                });
+            });
+           // services.AddScoped<IUsersManagerService, UsersManagerService>();
+            services.AddMvc();
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "OnePipe.API", Version = "v1" });
+                c.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info { Title = "OnePipe.API", Version = "v1" });
             });
 
-            services.AddIdentityWithMongoStores("mongodb://localhost:27017/OnePipeDB").
+         
 
-            services.AddSingleton<IUsersManagerService, UsersManagerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, Microsoft.AspNetCore.Hosting.IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OnePipe.API v1"));
-            }
-
+            
+            app.UseDeveloperExceptionPage();
+            app.UseSwagger();
+            app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "OnePipe.API v1"));
             //app.UseHttpsRedirection();
 
-            app.UseMvc();
 
             app.UseAuthentication();
 
-            //app.usem(endpoints =>
-            //{
-            //    endpoints.MapControllers();
-            //});
+            app.UseMvc();
         }
     }
 }
